@@ -58,6 +58,6 @@ describe( 'method shorthand', ()=>{
                     methods: [ 1, 3, 2 ]
                 }).map( e => Math.round( e._score * 10) / 10 )
             }
-        ).toThrowError( 'Invalid method definition' )
+        ).toThrow( 'Invalid method definition' )
     })
 })

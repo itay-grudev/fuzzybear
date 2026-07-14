@@ -109,7 +109,7 @@ function sharedExamples( term, matches ){
             ()=>{
                 search( term, matches, { methods: [] } )
             }
-        ).toThrowError( 'No search methods specified.' )
+        ).toThrow( 'No search methods specified.' )
     })
 
     it( 'returns 0 distances when the search term is empty', ()=>{
@@ -152,11 +152,11 @@ describe( 'search', ()=>{
             ()=>{
                 search( 'term', [ {}, {}, {} ])
             }
-        ).toThrowError( 'Element without label is not searchable' )
+        ).toThrow( 'Element without label is not searchable' )
         expect(
             ()=>{
                 search( 'term', [ 1, 2, 3 ])
             }
-        ).toThrowError( 'Element without label is not searchable' )
+        ).toThrow( 'Element without label is not searchable' )
     })
 })
