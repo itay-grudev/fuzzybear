@@ -4,6 +4,14 @@
     "description": "Fuzzybear is a library for fuzzy string search with a special focus on short strings.",
     "author": "Itay Grudev",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/itay-grudev/fuzzybear.git"
+    },
+    "homepage": "https://github.com/itay-grudev/fuzzybear#readme",
+    "bugs": {
+        "url": "https://github.com/itay-grudev/fuzzybear/issues"
+    },
     "type": "module",
     "types": "./dist/fuzzybear.d.ts",
     "main": "./dist/fuzzybear.cjs",
