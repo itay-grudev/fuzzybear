@@ -1,22 +1,43 @@
 {
     "name": "fuzzybear",
-    "version": "1.0.2",
+    "version": "2.0.0",
     "description": "Fuzzybear is a library for fuzzy string search with a special focus on short strings.",
     "author": "Itay Grudev",
     "license": "MIT",
-    "main": "./fuzzybear.js",
-    "exports": "./fuzzybear.js",
     "type": "module",
-    "jest": {
-        "collectCoverage": true,
-        "roots": [
-            "tests"
-        ]
+    "types": "./dist/fuzzybear.d.ts",
+    "main": "./dist/fuzzybear.cjs",
+    "module": "./dist/fuzzybear.js",
+    "exports": {
+        ".": {
+            "types": "./dist/fuzzybear.d.ts",
+            "import": "./dist/fuzzybear.js",
+            "require": "./dist/fuzzybear.cjs"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "sideEffects": false,
+    "engines": {
+        "node": ">=22"
     },
     "scripts": {
-        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+        "build": "tsup && tsc -p tsconfig.build.json",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
+        "typecheck": "tsc --noEmit",
+        "prepublishOnly": "npm run build"
     },
     "devDependencies": {
-        "jest": "^30.4.2"
+        "@types/node": "^26.1.1",
+        "@vitest/coverage-v8": "^4.1.10",
+        "tsup": "^8.5.1",
+        "typescript": "^7.0.2",
+        "vitest": "^4.1.10"
+    },
+    "overrides": {
+        "esbuild": "^0.28.1"
     }
 }

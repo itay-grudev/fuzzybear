@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+        "target": "es2022",
+        "lib": [ "es2022" ],
+        "module": "es2022",
+        "moduleResolution": "bundler",
+        "types": [ "node" ],
+
+        "strict": true,
+        "exactOptionalPropertyTypes": false,
+        "noUncheckedIndexedAccess": false,
+        "noImplicitOverride": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": false,
+
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "outDir": "dist",
+        "noEmit": true,
+
+        "isolatedModules": true,
+        "verbatimModuleSyntax": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true
+    },
+    "include": [ "src", "tests", "tsup.config.ts", "vitest.config.ts" ]
+}

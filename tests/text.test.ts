@@ -3,13 +3,15 @@
  * short string search and scoring.
  *
  * @author Itay Grudev
- * @copyright (c) 2021 Clustermarket Ltd.
+ * @copyright (c) 2026 Itay Grudev
  * @license MIT
  */
 
-import { search } from '../fuzzybear'
+import { describe, expect, it } from 'vitest'
 
-describe( 'long text examples', ()=>{
+import { search } from '../src/fuzzybear'
+
+describe( 'long text examples', () => {
     const BIO_EXCERPT = {
         id: 'bio',
         label: `
@@ -58,7 +60,7 @@ describe( 'long text examples', ()=>{
              that I’ve been turning over in my mind ever since. “Whenever you feel
              like criticizing anyone,” he told me, “just remember that all the
              people in this world haven’t had the advantages that you’ve had.”
-        `
+        `,
     }
 
     const matches = [
@@ -69,13 +71,19 @@ describe( 'long text examples', ()=>{
         GATSBY_EXCERPT,
     ]
 
-    it( 'are scored correctly with a single word search term', ()=>{
-        let results = search( 'Zenekis', matches )
-        expect( results.map( e => e.id )).toEqual( [ 'multi', 'dual', 'bio', 'gatsby', 'alice' ] )
-    })
+    it( 'are scored correctly with a single word search term', () => {
+        const results = search( 'Zenekis', matches )
+        expect( results.map( e => e.id ) ).toEqual( [ 'multi', 'dual', 'bio', 'alice', 'gatsby' ] )
+    } )
 
-    it( 'are scored correctly with a single word search term', ()=>{
-        let results = search( 'father advice Zenekis', matches )
-        expect( results.map( e => e.id )).toEqual( [ 'gatsby', 'multi', 'bio', 'dual', 'alice' ] )
-    })
-})
+    it( 'ranks excerpts by how often the search term occurs in them', () => {
+        const results = search( 'Zenekis', matches )
+        // 'Zemeckis' appears 4x in multi, 2x in dual and 1x in bio.
+        expect( results.slice( 0, 3 ).map( e => e.id ) ).toEqual( [ 'multi', 'dual', 'bio' ] )
+    } )
+
+    it( 'are scored correctly with a multi word search term', () => {
+        const results = search( 'father advice Zenekis', matches )
+        expect( results.map( e => e.id ) ).toEqual( [ 'bio', 'multi', 'gatsby', 'dual', 'alice' ] )
+    } )
+} )

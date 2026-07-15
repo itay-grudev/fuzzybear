@@ -2,23 +2,37 @@ Fuzzybear - short string search
 ===============================
 
 [![npm version](https://badge.fury.io/js/fuzzybear.svg)](https://badge.fury.io/js/fuzzybear)
-[![Tests](https://github.com/clustermarket/fuzzybear/actions/workflows/tests.yml/badge.svg)](https://github.com/clustermarket/fuzzybear/actions/workflows/tests.yml)
-[![CodeQL](https://github.com/clustermarket/fuzzybear/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/clustermarket/fuzzybear/actions/workflows/codeql-analysis.yml)
+[![Tests](https://github.com/itay-grudev/fuzzybear/actions/workflows/tests.yml/badge.svg)](https://github.com/itay-grudev/fuzzybear/actions/workflows/tests.yml)
+[![CodeQL](https://github.com/itay-grudev/fuzzybear/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/itay-grudev/fuzzybear/actions/workflows/codeql-analysis.yml)
 
-Fuzzybear is a JavaScript library for fuzzy string search with a special focus on short strings. It is designed to use
+Fuzzybear is a TypeScript library for fuzzy string search with a special focus on short strings. It is designed to use
 multiple string distance functions (including custom) but by default it uses a combination of Jaro-Winkler and Jaccard
 string distances. The former favours matches from the beginning of a string, while the latter splits the string into
 tokens and analyses those. Together these provide a reasonable performance for  most cases, but the library allows the
 user to customise the methods and parameters for searching.
 
-![Fuzzy bear](https://raw.githubusercontent.com/clustermarket/fuzzybear/main/fuzzybear.jpg "Cute Fuzzy Bear")
+![Fuzzy bear](https://raw.githubusercontent.com/itay-grudev/fuzzybear/main/fuzzybear.jpg "Cute Fuzzy Bear")
+
+Installation
+------------
+
+```sh
+npm install fuzzybear
+```
+
+The package ships type declarations and is published as both ESM and CommonJS:
+
+```js
+import { search, score } from 'fuzzybear'       // ESM
+const { search, score } = require( 'fuzzybear' ) // CommonJS
+```
 
 Usage
 -----
 
 ### Subset Search
 
-`fuzzybear.search` is the primary method used for searching. It accepts either a string array or an object. array where
+`search` is the primary method used for searching. It accepts either a string array or an object array where
 each element contains a key `label`.
 
 ```js
@@ -32,20 +46,22 @@ let matches = [
     { label: 'dentist', id: 's4' },
     { label: 'Different', id: 's5' },
 ]
-fuzzybear.search( 'Identical', matches )
+search( 'Identical', matches )
 ```
+
+Each result is the original element with a `_score` added, sorted by descending score, where `1` is an exact match.
 
 You can also restrict the number of results returned:
 
 ```js
-fuzzybear.search( 'Identical', matches, { results: 3 })
+search( 'Identical', matches, { results: 3 })
 ```
 
 ### Manual scoring
 ```js
-fuzzybear.score( 'prism', 'contact' )    // => 0
-fuzzybear.score( 'prism', 'prism' )      // => 1
-fuzzybear.score( 'prism', 'unpristine' ) // => 0.56
+score( 'prism', 'contact' )    // => 0
+score( 'prism', 'prism' )      // => 1
+score( 'prism', 'unpristine' ) // => 0.56
 ```
 
 ### Advanced usage
@@ -56,7 +72,7 @@ parameters to override the method's behaviour. For example, you can use a minimu
 Jaccard search method to ignore matches with less than 3 letters.
 
 ```js
-fuzzybear.search( 'Identical', matches, {
+search( 'Identical', matches, {
     methods: [
         {
             name: 'jaccard',
@@ -72,7 +88,7 @@ target string and the method parameters. The function should return a number bet
 (meaning the string distance is 0).
 
 ```js
-fuzzybear.search( 'asd', [ 'a', 'b', 'c', 'd' ], {
+search( 'asd', [ 'a', 'b', 'c', 'd' ], {
     methods: [
         {
             name: 'match-all',
@@ -84,28 +100,61 @@ fuzzybear.search( 'asd', [ 'a', 'b', 'c', 'd' ], {
 })
 ```
 
-## API
+Methods may also be given in shorthand — as a bare name or a bare function, each of which defaults to a weight of `1`:
 
 ```js
-fuzzybear.search( term, matches, options ) // Perform a fuzzy string search across a list of elements.
-fuzzybear.score( term, match, options ) // Perform a fuzzy string distance of two strings.
+search( 'term', matches, { methods: [ 'jaro_winkler', 'jaccard' ] })
+search( 'term', matches, { methods: [ ( a, b ) => 0.8 ] })
+```
+
+## API
+
+```ts
+search( term, elements, options? ): SearchResult[] // Fuzzy string search across a list of elements.
+score( term, testString, options? ): number        // Fuzzy string comparison of two strings.
 ```
 
 ### Configuration options
 
-```js
-/**
- * @param {Number}   options.results - Number of results to return. Defaults to 0 - all elements distanced
- * @param {String}   options.labelField - Field to search against. Defaults to "label"
- * @param {Boolean}  options.caseSensitive - Whether to perform a case sensitive match. Defaults to false
- * @param {Number}   options.minScore - Minimum score of matches to be included in the results
- * @param {Object[]} options.methods - Which methods to use when scoring matches
- * @param {String}   options.methods[].name - Search algorithm name
- * @param {Object}   options.methods[].function - A custom search algorithm function. The function takes
- * @param {Number}   options.methods[].weight - Search algorithm weight in scoring
- * @param {Object}   options.methods[].params - Search algorithm parameters
- */
+```ts
+interface Options {
+    results?: number       // Number of results to return. Defaults to 0 - all elements distanced
+    labelField?: string    // Field to search against. Defaults to "label"
+    caseSensitive?: boolean // Whether to perform a case sensitive match. Defaults to false
+    minScore?: number      // Minimum score of matches to be included in the results
+    methods?: MethodSpec[] // Which methods to use when scoring matches
+}
+
+// A method may be a built-in name, a bare distance function, or a definition object
+type MethodSpec = string | DistanceFunction | MethodDefinition
+
+interface MethodDefinition {
+    name?: string               // Name of a built-in search algorithm, or a label for a custom one
+    function?: DistanceFunction // A custom search algorithm. Takes precedence over `name`
+    weight?: number             // Search algorithm weight in scoring. Defaults to 1
+    params?: unknown            // Search algorithm parameters
+}
+
+// Returns a distance normalized between 0 and 1, where 0 is an exact match —
+// the inverse of the score reported by search() and score()
+type DistanceFunction = ( a: string, b: string, params?: any ) => number
 ```
+
+Passing an unsupported method name throws `Unsupported search method: <name>`.
+
+## Upgrading from 1.x
+
+Fuzzybear is now written in TypeScript and ships its own type declarations. `search` and `score` keep the same
+signatures, so most callers need no change.
+
+Two things did change:
+
+* **Scores have shifted.** The Jaccard method previously credited a repeated ngram in the test string multiple times
+  against a single occurrence in the search term, which could push a distance outside its documented `0..1` range and let
+  a string with a repeated token outrank an exact match. Occurrences are now consumed correctly. Absolute scores differ
+  slightly and result ordering can change for longer text — if you persist scores or assert on exact orderings, re-check
+  them.
+* **Unsupported method names now throw.** Previously they failed later with a `TypeError`.
 
 ## PR's accepted for:
 
