@@ -107,6 +107,35 @@ search( 'term', matches, { methods: [ 'jaro_winkler', 'jaccard' ] })
 search( 'term', matches, { methods: [ ( a, b ) => 0.8 ] })
 ```
 
+#### Preprocessors
+
+Preprocessors normalise strings before they are scored. Each one is applied, in order, to both the search term and every
+candidate, so both sides are always transformed the same way. The built-in `transliterate` preprocessor folds text to
+ASCII — accents are stripped onto their base letter and Latin ligatures, special letters and common punctuation are
+mapped to ASCII equivalents — so that accented and unaccented spellings match.
+
+```js
+search( 'Munchen', [ 'München', 'Malmö' ], { preprocessors: [ 'transliterate' ] })
+// => München matches as an exact result
+
+score( 'senor', 'señor', { preprocessors: [ 'transliterate' ] }) // => 1
+```
+
+A preprocessor may be a built-in name or a custom function. Case folding (see `caseSensitive`) is applied after the
+preprocessors run.
+
+```js
+// Strip punctuation before scoring
+search( 'ab-cd', [ 'abcd' ], { preprocessors: [ s => s.replace( /[^a-z0-9]/gi, '' ) ] })
+```
+
+The `transliterate` function is also exported for direct use:
+
+```js
+import { transliterate } from 'fuzzybear'
+transliterate( '¿señor Æther straße?' ) // => '?senor AEther strasse?'
+```
+
 ## API
 
 ```ts
@@ -123,6 +152,7 @@ interface Options {
     caseSensitive?: boolean // Whether to perform a case sensitive match. Defaults to false
     minScore?: number      // Minimum score of matches to be included in the results
     methods?: MethodSpec[] // Which methods to use when scoring matches
+    preprocessors?: PreprocessorSpec[] // Normalisers applied to both sides before scoring. Defaults to none
 }
 
 // A method may be a built-in name, a bare distance function, or a definition object
@@ -138,9 +168,14 @@ interface MethodDefinition {
 // Returns a distance normalized between 0 and 1, where 0 is an exact match —
 // the inverse of the score reported by search() and score()
 type DistanceFunction = ( a: string, b: string, params?: any ) => number
+
+// A preprocessor may be a built-in name ('transliterate') or a custom function
+type PreprocessorSpec = string | Preprocessor
+type Preprocessor = ( input: string ) => string
 ```
 
-Passing an unsupported method name throws `Unsupported search method: <name>`.
+Passing an unsupported method name throws `Unsupported search method: <name>`, and an unsupported preprocessor name
+throws `Unsupported preprocessor: <name>`.
 
 ## Upgrading from 1.x
 
@@ -159,9 +194,7 @@ Two things did change:
 ## PR's accepted for:
 
 * Search methods that support longer text and using a tokenised approach (and maybe even re-using the standard string distance methods).
-* Support for string pre-processors
- - UTF-8 to ASCII conversion for symbols like: `äáčďéíöóúüñ¿¡Æ`
- - Metaphone conversion
+* Additional preprocessors, e.g. a Metaphone phonetic preprocessor (see the `preprocessors` option for where these plug in).
 
 License
 -------

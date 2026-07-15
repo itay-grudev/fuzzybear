@@ -10,9 +10,11 @@
 
 import jaccard from './methods/jaccard'
 import jaro_winkler from './methods/jaro_winkler'
+import transliterate from './preprocessors/transliterate'
 
 export type { JaccardParams } from './methods/jaccard'
 export type { JaroWinklerParams } from './methods/jaro_winkler'
+export { default as transliterate } from './preprocessors/transliterate'
 
 /**
  * A string distance function.
@@ -26,8 +28,8 @@ export type { JaroWinklerParams } from './methods/jaro_winkler'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type DistanceFunction = ( a: string, b: string, params?: any ) => number
 
-/** The name of a distance method bundled with fuzzybear. */
-export type BuiltinMethodName = 'jaccard' | 'jaro_winkler'
+/** The name of a distance method bundled with fuzzybear. Derived from {@link METHODS}. */
+export type BuiltinMethodName = keyof typeof METHODS
 
 export interface MethodDefinition {
     /** Name of a built-in search algorithm, or a label for a custom one. */
@@ -46,6 +48,18 @@ export interface MethodDefinition {
  */
 export type MethodSpec = BuiltinMethodName | ( string & {} ) | DistanceFunction | MethodDefinition
 
+/**
+ * A string preprocessor. Applied to both the search term and every candidate before they
+ * are scored, so both sides are always normalized the same way.
+ */
+export type Preprocessor = ( input: string ) => string
+
+/** The name of a preprocessor bundled with fuzzybear. Derived from {@link PREPROCESSORS}. */
+export type BuiltinPreprocessorName = keyof typeof PREPROCESSORS
+
+/** A preprocessor may be given as a built-in name or a custom function. */
+export type PreprocessorSpec = BuiltinPreprocessorName | ( string & {} ) | Preprocessor
+
 export interface Options {
     /** Number of results to return. Defaults to 0 - all elements distanced. */
     results?: number
@@ -57,6 +71,11 @@ export interface Options {
     minScore?: number
     /** Which methods to use when scoring matches. */
     methods?: MethodSpec[]
+    /**
+     * Preprocessors applied, in order, to both the search term and every candidate before
+     * scoring. Defaults to none. Case folding (see `caseSensitive`) is applied after these.
+     */
+    preprocessors?: PreprocessorSpec[]
 }
 
 /** An element may be searched either as a bare string or as an object with a label. */
@@ -66,10 +85,18 @@ export type SearchElement = string | Record<string, unknown>
 export type SearchResult<T extends SearchElement> =
     ( T extends string ? Record<string, string> : T ) & { _score: number }
 
-const METHODS: Record<string, DistanceFunction> = {
-    jaccard: jaccard,
-    jaro_winkler: jaro_winkler,
-}
+// The bundled registries are the single source of truth for their names: the
+// `Builtin*Name` types are derived from these keys, so adding an entry here is all that is
+// needed to extend both the runtime lookup and the accepted names. `satisfies` keeps each
+// key as a literal (a `Record<string, …>` annotation would widen them away).
+const METHODS = {
+    jaccard,
+    jaro_winkler,
+} satisfies Record<string, DistanceFunction>
+
+const PREPROCESSORS = {
+    transliterate,
+} satisfies Record<string, Preprocessor>
 
 /** A method definition after defaults have been applied and its function resolved. */
 interface ResolvedMethod {
@@ -86,6 +113,7 @@ interface ResolvedOptions {
     caseSensitive: boolean
     minScore: number
     methods: ResolvedMethod[]
+    preprocessors: Preprocessor[]
 }
 
 const DEFAULT_OPTIONS: Required<Options> = {
@@ -97,6 +125,7 @@ const DEFAULT_OPTIONS: Required<Options> = {
         { name: 'jaro_winkler', params: { p: 0.1 }, weight: 1.5 },
         { name: 'jaccard', params: { n: 2 }, weight: 1 },
     ],
+    preprocessors: [],
 }
 
 /**
@@ -171,10 +200,8 @@ function scoreResolved(
     testString: string,
     options: ResolvedOptions,
 ): number {
-    if( ! options.caseSensitive ){
-        searchTerm = searchTerm.toLowerCase()
-        testString = testString.toLowerCase()
-    }
+    searchTerm = preprocess( searchTerm, options )
+    testString = preprocess( testString, options )
 
     let score = 0
     let weight = 0
@@ -185,6 +212,22 @@ function scoreResolved(
     }
 
     return score / weight
+}
+
+/**
+ * Applies the configured preprocessors, in order, then case folding.
+ *
+ * Case folding runs last so that a preprocessor sees the original casing (relevant for
+ * case-aware transliteration such as `Æ` → `AE`).
+ */
+function preprocess( input: string, options: ResolvedOptions ): string {
+    for( const preprocessor of options.preprocessors )
+        input = preprocessor( input )
+
+    if( ! options.caseSensitive )
+        input = input.toLowerCase()
+
+    return input
 }
 
 function resolveOptions( options: Options ): ResolvedOptions {
@@ -200,6 +243,7 @@ function resolveOptions( options: Options ): ResolvedOptions {
         caseSensitive: merged.caseSensitive,
         minScore: merged.minScore,
         methods: merged.methods.map( resolveMethod ),
+        preprocessors: merged.preprocessors.map( resolvePreprocessor ),
     }
 }
 
@@ -231,12 +275,33 @@ function resolveMethod( method: MethodSpec ): ResolvedMethod {
 }
 
 function lookupMethod( name: string | undefined ): DistanceFunction {
-    const fn = name === undefined ? undefined : METHODS[name]
-
-    if( fn === undefined )
+    if( name === undefined || ! isBuiltinMethodName( name ) )
         throw new Error( `Unsupported search method: ${ String( name ) }` )
 
-    return fn
+    return METHODS[name]
+}
+
+function isBuiltinMethodName( name: string ): name is BuiltinMethodName {
+    return Object.hasOwn( METHODS, name )
+}
+
+/** Normalizes a preprocessor shorthand into a function. */
+function resolvePreprocessor( preprocessor: PreprocessorSpec ): Preprocessor {
+    if( typeof preprocessor === 'function' )
+        return preprocessor
+
+    if( typeof preprocessor === 'string' ){
+        if( ! isBuiltinPreprocessorName( preprocessor ) )
+            throw new Error( `Unsupported preprocessor: ${ preprocessor }` )
+
+        return PREPROCESSORS[preprocessor]
+    }
+
+    throw new Error( 'Invalid preprocessor definition' )
+}
+
+function isBuiltinPreprocessorName( name: string ): name is BuiltinPreprocessorName {
+    return Object.hasOwn( PREPROCESSORS, name )
 }
 
 /** Returns the value an element should be searched against, or undefined if it has none. */
