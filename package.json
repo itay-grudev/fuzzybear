@@ -12,6 +12,14 @@
     "bugs": {
         "url": "https://github.com/itay-grudev/fuzzybear/issues"
     },
+    "keywords": [
+        "fuzzy",
+        "search",
+        "short-string",
+        "typescript",
+        "jaro-winkler",
+        "jaccard"
+    ],
     "type": "module",
     "types": "./dist/fuzzybear.d.ts",
     "main": "./dist/fuzzybear.cjs",

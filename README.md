@@ -1,7 +1,7 @@
 Fuzzybear - short string search
 ===============================
 
-[![npm version](https://badge.fury.io/js/fuzzybear.svg)](https://badge.fury.io/js/fuzzybear)
+![NPM Version](https://img.shields.io/npm/v/fuzzybear)
 [![Tests](https://github.com/itay-grudev/fuzzybear/actions/workflows/tests.yml/badge.svg)](https://github.com/itay-grudev/fuzzybear/actions/workflows/tests.yml)
 [![CodeQL](https://github.com/itay-grudev/fuzzybear/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/itay-grudev/fuzzybear/actions/workflows/codeql-analysis.yml)
 
