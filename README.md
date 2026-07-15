@@ -8,8 +8,10 @@ Fuzzybear - short string search
 Fuzzybear is a TypeScript library for fuzzy string search with a special focus on short strings. It is designed to use
 multiple string distance functions (including custom) but by default it uses a combination of Jaro-Winkler and Jaccard
 string distances. The former favours matches from the beginning of a string, while the latter splits the string into
-tokens and analyses those. Together these provide a reasonable performance for  most cases, but the library allows the
-user to customise the methods and parameters for searching.
+tokens and analyses those.
+
+Combining the Jaro-Winkler and Jaccard distances provides very good level of
+fuzzines with comparable performance.
 
 ![Fuzzy bear](https://raw.githubusercontent.com/itay-grudev/fuzzybear/main/fuzzybear.jpg "Cute Fuzzy Bear")
 
@@ -23,7 +25,7 @@ npm install fuzzybear
 The package ships type declarations and is published as both ESM and CommonJS:
 
 ```js
-import { search, score } from 'fuzzybear'       // ESM
+import { search, score } from 'fuzzybear'        // ESM
 const { search, score } = require( 'fuzzybear' ) // CommonJS
 ```
 
@@ -83,7 +85,7 @@ search( 'Identical', matches, {
 ```
 
 #### Custom search function
-You can also pass a custom scoring function to the search method. The function takes 3 parameters: the search term, the 
+You can also pass a custom scoring function to the search method. The function takes 3 parameters: the search term, the
 target string and the method parameters. The function should return a number between 0 and 1, where 0 is a perfect match
 (meaning the string distance is 0).
 
