@@ -1,6 +1,6 @@
 {
     "name": "fuzzybear",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Fuzzybear is a library for fuzzy string search with a special focus on short strings.",
     "author": "Itay Grudev",
     "license": "MIT",
